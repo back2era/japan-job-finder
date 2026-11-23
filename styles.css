@@ -104,6 +104,7 @@ legend { padding: 0; margin-bottom: 7px; font-size: .86rem; font-weight: 750; }
 .company-mark.ice { background: #e2edf2; color: #2b5c75; }
 .company-mark.sand { background: #f2ead6; color: #705a2c; }
 .company-mark.cyan { background: #e0f2fe; color: #0284c7; }
+.company-mark.orange { background: #fef3c7; color: #b45309; }
 .card-bookmark { position: absolute; right: 13px; top: 13px; background: transparent; border: 0; padding: 8px; border-radius: 8px; color: #4c6258; }
 .card-bookmark:hover, .card-bookmark[aria-pressed='true'] { color: #9b4b2a; background: #faeee6; }
 [aria-pressed='true'] > .icon .bookmark-shape { fill: currentColor; }

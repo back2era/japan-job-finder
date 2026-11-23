@@ -79,3 +79,28 @@ test('normalizes Mynavi data source with Japanese salary, tags and remote mode',
   assert.equal(search([job], { query: '日研' }).length, 1);
   assert.equal(search([job], { query: '东京', career: 'early' }).length, 1);
 });
+
+test('normalizes Mynavi 2027 new graduate data source and matches graduate search', () => {
+  const source27 = SOURCES.find(s => s.key === 'mynavi2027');
+  assert.ok(source27, 'Mynavi 2027 source should be registered');
+  const raw27 = {
+    id: '228375',
+    company: 'UTエイム(株)',
+    title: '文理不問・未経験から将来性抜群の「半導体」エンジニアへ！',
+    url: 'https://job.mynavi.jp/27/pc/search/corp228375/outline.html',
+    location: '東京都品川区',
+    industry: '半導体・電子・電気機器、機械、総合電機',
+    career: 'graduate',
+    country: 'JP',
+    description: '【企业名称】\nUTエイム(株)\n【所属行业】\n半導体・電子・電気機器'
+  };
+  const job = normalize(raw27, source27);
+  assert.equal(job.company, 'UTエイム(株)');
+  assert.equal(job.source, 'mynavi2027');
+  assert.equal(job.career, 'graduate');
+  assert.ok(job.cities.includes('东京'));
+
+  assert.equal(search([job], { query: '半导体' }).length, 1);
+  assert.equal(search([job], { career: 'graduate' }).length, 1);
+  assert.equal(search([job], { query: 'UTエイム' }).length, 1);
+});

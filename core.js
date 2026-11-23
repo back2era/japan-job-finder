@@ -16,6 +16,8 @@ const JobsCore = (() => {
       url: 'https://api.lever.co/v0/postings/mujininc?mode=json', site: 'https://jobs.lever.co/mujininc' },
     { key: 'mynavi', name: 'マイナビ転職 (Mynavi)', mark: 'M', tone: 'cyan', mynavi: true,
       url: 'https://tenshoku.mynavi.jp/list/', site: 'https://tenshoku.mynavi.jp/' },
+    { key: 'mynavi2027', name: 'マイナビ2027 (新卒)', mark: '27', tone: 'orange', mynavi: true,
+      url: 'https://job.mynavi.jp/2027/', site: 'https://job.mynavi.jp/2027/' },
   ];
   const LOCATIONS = [
     ['东京', /東京|东京|\btokyo\b/i], ['大阪', /大阪|\bosaka\b/i],
@@ -49,6 +51,10 @@ const JobsCore = (() => {
     ['中文', '中国语', '中国語', 'chinese'],
     ['英语', '英文', '英語', 'english'],
     ['签证', 'ビザ', 'visa'],
+    ['半导体', '半導体', 'semiconductor', 'chip'],
+    ['电子', '电气', '电子电气', '電子', '電気', 'electronics', 'electrical'],
+    ['机械', '機械', 'mechanical'],
+    ['汽车', '自動車', 'automotive'],
   ];
   const ROLE_NAMES = [
     [/backend|back-end|バックエンド|サーバーサイド/i, '后端工程师'],
