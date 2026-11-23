@@ -48,3 +48,34 @@ test('non-Japanese and non-job results are skipped and multi-city locations rema
   assert.equal(normalize({ ...raw, title: 'Employee Referral' }, source), null);
   assert.equal(normalize({ ...raw, absolute_url: 'javascript:alert(0)' }, source), null);
 });
+
+test('normalizes Mynavi data source with Japanese salary, tags and remote mode', () => {
+  const mynaviSource = SOURCES.find(s => s.key === 'mynavi');
+  assert.ok(mynaviSource, 'Mynavi source should be registered');
+  const rawMynavi = {
+    id: '307477-1-49-1',
+    company: '日研トータルソーシング株式会社',
+    title: 'トヨタ・日産等に配属／未経験可／在宅可【テクニカルサポート】',
+    url: 'https://tenshoku.mynavi.jp/jobinfo-307477-1-49-1/',
+    location: '全国47都道府県（東京・大阪・愛知・福岡）',
+    salary: '360万–420万日元 / 年',
+    description: '大手メーカーの開発チームでエンジニアをサポート！\n第二新卒歓迎\n在宅勤務・リモートワーク可',
+    tags: ['正社員', '第二新卒歓迎', 'リモートワーク可']
+  };
+  const job = normalize(rawMynavi, mynaviSource);
+  assert.equal(job.company, '日研トータルソーシング株式会社');
+  assert.equal(job.source, 'mynavi');
+  assert.equal(job.titleZh, '技术支持工程师');
+  assert.equal(job.career, 'early');
+  assert.equal(job.mode, 'remote');
+  assert.equal(job.salary, '360万–420万日元 / 年');
+  assert.ok(job.cities.includes('东京'));
+  assert.ok(job.cities.includes('大阪'));
+  assert.ok(job.cities.includes('爱知县'));
+  assert.ok(job.cities.includes('福冈'));
+
+  assert.equal(search([job], { query: '技术支持' }).length, 1);
+  assert.equal(search([job], { query: 'テクニカルサポート' }).length, 1);
+  assert.equal(search([job], { query: '日研' }).length, 1);
+  assert.equal(search([job], { query: '东京', career: 'early' }).length, 1);
+});

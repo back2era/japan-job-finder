@@ -234,6 +234,9 @@
     refreshing = true;
     renderStatus();
     const results = await Promise.allSettled(SOURCES.map(async (source) => {
+      if (source.mynavi) {
+        return initial.jobs.filter((job) => job.source === source.key);
+      }
       const response = await fetch(source.url, { signal: AbortSignal.timeout(10000) });
       if (!response.ok) throw new Error(`Feed HTTP ${response.status}`);
       const payload = await response.json();
@@ -242,8 +245,14 @@
       return jobs.map((job) => normalize(job, source, initial.highlights)).filter(Boolean);
     }));
     for (const [index, result] of results.entries()) {
-      if (result.status === 'fulfilled') feeds.set(SOURCES[index].key, { status: 'live', entries: result.value });
-      else feeds.get(SOURCES[index].key).status = 'snapshot';
+      const source = SOURCES[index];
+      if (source.mynavi) {
+        feeds.set(source.key, { status: 'snapshot', entries: initial.jobs.filter((job) => job.source === source.key) });
+      } else if (result.status === 'fulfilled') {
+        feeds.set(source.key, { status: 'live', entries: result.value });
+      } else {
+        feeds.get(source.key).status = 'snapshot';
+      }
     }
     refreshing = false;
     render();
