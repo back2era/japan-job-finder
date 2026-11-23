@@ -1,0 +1,50 @@
+const test = require('node:test');
+const assert = require('node:assert/strict');
+const { categorize, facts, normalize, search, SOURCES } = require('./core.js');
+
+test('Chinese, Japanese and English terms can match the same real role type', () => {
+  const job = normalize({ id: 3, title: 'Backend Engineer', location: { name: 'Tokyo, Japan' },
+    absolute_url: 'https://job-boards.greenhouse.io/paypaysec/jobs/3' }, SOURCES[0]);
+  for (const query of ['东京 软件开发', '東京 バックエンド', 'Tokyo backend', '后端 东京']) {
+    assert.deepEqual(search([job], { query }), [job], query);
+  }
+  assert.deepEqual(search([job], { query: '大阪 软件开发' }), []);
+  assert.deepEqual(search([job], { query: '量子', category: 'tech' }), []);
+  const unrelated = { ...job, title: 'Office Assistant', titleZh: '办公室助理', company: 'Company Limited', category: 'corporate' };
+  assert.deepEqual(search([unrelated], { query: '软件开发' }), []);
+});
+
+test('matches eligible careers only when the listing names that career', () => {
+  assert.equal(categorize('Client Service Intern').career, 'intern');
+  assert.equal(categorize('Software Engineer - New Graduate 2027').career, 'graduate');
+  assert.equal(categorize('システムエンジニア（第二新卒歓迎）').career, 'early');
+  assert.equal(categorize('Software Engineer', 'Our team graduated from college in 2027').career, '');
+  assert.equal(categorize('Associate Engineer').career, '');
+  assert.equal(categorize('Senior Data Engineer').career, 'experienced');
+  assert.equal(categorize('Software Engineer', 'We are unable to offer internships.').career, '');
+});
+
+test('unrelated dates, relocation and vague compensation do not imply requirements', () => {
+  const fields = facts('Relocation assistance is available. Salary dependent on experience. Updated 2026-05-10.', '');
+  for (const name of ['visa', 'salary', 'deadline', 'language', 'overtime']) assert.equal(fields[name], '');
+  assert.equal(facts('No visa sponsorship is available.', '').visa, '不提供签证支持');
+  assert.equal(facts('Business level in either English or Japanese (JLPT N1)', '').language, '商务英语或商务日语（N1）');
+  assert.equal(facts('Monthly Salary: JPY 571,000- JPY 959,000\nIncludes fixed overtime pay for 45 hours', '').salary, '57.1万–95.9万日元 / 月');
+  assert.equal(facts('Monthly Salary: JPY 571,000- JPY 959,000\nIncludes fixed overtime pay for 45 hours', '').overtime, '含 45 小时固定加班');
+  assert.equal(facts('Base salary: USD 148,000 per year', '').salary, '');
+});
+
+test('non-Japanese and non-job results are skipped and multi-city locations remain searchable', () => {
+  const source = SOURCES[0];
+  const raw = { id: 8, title: 'Technical Support Engineer', location: { name: 'Nagoya, Japan; Osaka, Japan; Tokyo, Japan' },
+    absolute_url: 'https://job-boards.greenhouse.io/paypaysec/jobs/8' };
+  const job = normalize(raw, source);
+  assert.deepEqual(job.cities, ['东京', '大阪', '爱知县']);
+  assert.equal(search([job], { query: '爱知 技术支持' }).length, 1);
+  assert.equal(search([job], { city: '大阪' }).length, 1);
+  const okazaki = normalize({ ...raw, location: { name: 'Okazaki, Aichi' } }, source);
+  assert.equal(search([job, okazaki], { query: '名古屋' }).length, 1);
+  assert.equal(normalize({ ...raw, location: { name: 'London' } }, source), null);
+  assert.equal(normalize({ ...raw, title: 'Employee Referral' }, source), null);
+  assert.equal(normalize({ ...raw, absolute_url: 'javascript:alert(0)' }, source), null);
+});

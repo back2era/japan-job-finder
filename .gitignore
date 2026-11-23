@@ -1,0 +1,16 @@
+/dist/
+.env*
+*.pem
+*.key
+*.p12
+*.pfx
+*.wav
+*.mp3
+*.m4a
+/private/
+/resumes/
+/recordings/
+**/*resume*
+**/*résumé*
+**/*简历*
+**/*面试录音*

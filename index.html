@@ -1,0 +1,75 @@
+<!doctype html>
+<html lang="zh-Hans">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="description" content="用中文搜索日本企业招聘岗位，按工作地、职种和招聘类型筛选。">
+  <meta name="theme-color" content="#f7f6f2">
+  <title>日职导航｜日本求职搜索</title>
+  <style>/* STYLES */</style>
+</head>
+<body>
+  <header class="topbar">
+    <div class="frame nav">
+      <a class="brand" id="brand-home" href="#home" aria-label="日职导航首页"><span class="brand-mark" aria-hidden="true"><i></i></span><span>日职导航</span></a>
+      <nav aria-label="主导航">
+        <button type="button" class="nav-button current" id="browse" aria-pressed="true">找工作</button>
+        <button type="button" class="nav-button" id="saved" aria-pressed="false"><span class="icon" data-icon="bookmark"></span>我的收藏 <span class="saved-count" id="saved-count" hidden></span></button>
+      </nav>
+      <button type="button" class="sources-button" id="show-sources"><span class="icon" data-icon="link"></span><span>数据来源</span></button>
+    </div>
+  </header>
+
+  <main id="home" class="frame">
+    <section class="hero" aria-labelledby="main-title">
+      <div class="hero-content">
+        <h1 id="main-title">在日本，找到<br>下一份工作<span>。</span></h1>
+        <p>用中文搜索日本企业官网的招聘岗位。</p>
+        <form id="search-form" class="search-form" role="search">
+          <div class="search-keywords"><span class="icon" data-icon="search"></span><label class="sr-only" for="query">搜索职位或公司</label><input id="query" type="search" placeholder="职位、公司或关键词" autocomplete="off"></div>
+          <div class="search-city"><span class="icon" data-icon="pin"></span><label class="sr-only" for="city">工作地区</label><select id="city"><option value="">所有地区</option></select><span class="icon chevron" data-icon="chevron"></span></div>
+          <button type="submit" class="primary">搜索职位</button>
+        </form>
+        <div class="quick" aria-label="快捷搜索"><span>试试</span><button type="button" data-quick="软件开发" data-city="东京">东京 · 软件开发</button><button type="button" data-quick="实习" data-city="大阪">大阪 · 实习</button><button type="button" data-quick="应届" data-city="">应届／新卒</button></div>
+      </div>
+    </section>
+
+    <div class="workspace" id="workspace">
+      <aside class="filters" aria-labelledby="filter-title">
+        <div class="filter-header"><h2 id="filter-title"><span class="icon" data-icon="sliders"></span>筛选</h2><button type="button" class="filter-toggle" id="filter-toggle" aria-expanded="false" aria-controls="filter-options">展开筛选</button><button type="button" class="text-button" id="reset">清除</button></div>
+        <div class="filter-options" id="filter-options">
+          <fieldset><legend>招聘类型</legend><div id="career-filters"></div></fieldset>
+          <fieldset><legend>职种</legend><div id="category-filters"></div></fieldset>
+          <fieldset><legend>其他条件</legend>
+            <label class="filter-option"><input type="checkbox" id="flexible"><span>远程或混合办公</span></label>
+            <label class="filter-option"><input type="checkbox" id="salary-only"><span>已公开薪资</span></label>
+          </fieldset>
+        </div>
+      </aside>
+
+      <section class="results" aria-labelledby="results-title">
+        <header class="results-header">
+          <div><h2 id="results-title">探索职位</h2><p><strong id="result-count" aria-live="polite"></strong><span class="divider-dot">·</span><span id="feed-status" role="status"></span></p></div>
+          <div class="result-actions">
+            <button type="button" class="refresh" id="refresh" title="刷新招聘来源" aria-label="刷新招聘来源"><span class="icon" data-icon="refresh"></span></button>
+            <div class="sort-control"><label class="sr-only" for="sort">结果排序</label><select id="sort"><option value="recommended">中文摘要优先</option><option value="latest">最新发布</option><option value="salary">公开薪资优先</option></select><span class="icon chevron" data-icon="chevron"></span></div>
+          </div>
+        </header>
+        <div class="active-filters" id="active-filters" aria-label="当前筛选" hidden></div>
+        <div id="job-list" class="job-grid"></div>
+        <div id="empty" class="empty" hidden><span class="icon" data-icon="search"></span><h3 id="empty-title"></h3><p id="empty-copy"></p><button type="button" class="secondary" id="empty-action"></button></div>
+        <button type="button" id="more" class="secondary more" hidden>加载更多职位</button>
+      </section>
+    </div>
+  </main>
+
+  <footer class="frame footer"><span>日职导航 · 日本企业招聘信息</span><a href="https://commons.wikimedia.org/wiki/File:Shiba-koen,_aerial_view_on_Tokyo_Tower_at_dusk_(Unsplash).jpg" target="_blank" rel="noopener noreferrer">东京摄影 · Kazuend（CC0）</a></footer>
+
+  <dialog id="job-dialog" class="drawer" aria-labelledby="detail-title"><button type="button" class="close" id="close-job" aria-label="关闭"><span class="icon" data-icon="close"></span></button><div id="job-detail"></div></dialog>
+  <dialog id="source-dialog" class="source-dialog" aria-labelledby="source-title"><button type="button" class="close" id="close-sources" aria-label="关闭"><span class="icon" data-icon="close"></span></button><h2 id="source-title">招聘数据来源</h2><p>职位来自以下企业的公开招聘接口。打开页面时会尝试同步，连接失败时会显示最近的职位快照。</p><div id="source-list"></div><p class="source-foot">页面只收录这些来源。职位状态、资格与申请以企业原文为准。</p></dialog>
+
+  <script type="application/json" id="initial-data">/* SNAPSHOT */</script>
+  <script>/* CORE */</script>
+  <script>/* APP */</script>
+</body>
+</html>
