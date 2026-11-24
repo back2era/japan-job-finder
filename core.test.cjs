@@ -104,3 +104,30 @@ test('normalizes Mynavi 2027 new graduate data source and matches graduate searc
   assert.equal(search([job], { career: 'graduate' }).length, 1);
   assert.equal(search([job], { query: 'UTエイム' }).length, 1);
 });
+
+test('normalizes Daijob bilingual source and tags foreign-friendly jobs correctly', () => {
+  const daijobSource = SOURCES.find(s => s.key === 'daijob');
+  assert.ok(daijobSource, 'Daijob source must be registered');
+
+  const rawDaijob = {
+    id: '1567896',
+    title: '【未経験歓迎】中国語を活かす不動産仲介エージェント｜ビザサポートあり',
+    company: 'GTN',
+    location: 'アジア 日本 東京都',
+    career: 'graduate',
+    salary: '350万–600万日元 / 年',
+    url: 'https://www.daijob.com/jobs/detail/1567896',
+    description: '多国籍社員活躍中。留学生積極採用。就労ビザ支援あり。'
+  };
+
+  const job = normalize(rawDaijob, daijobSource);
+  assert.equal(job.source, 'daijob');
+  assert.equal(job.foreignOk, true);
+  assert.ok(job.cities.includes('东京'));
+
+  // Test search with foreign filter
+  assert.equal(search([job], { foreign: true }).length, 1);
+  assert.equal(search([job], { query: '外国人' }).length, 1);
+  assert.equal(search([job], { query: '留学生' }).length, 1);
+  assert.equal(search([job], { query: 'visa' }).length, 1);
+});

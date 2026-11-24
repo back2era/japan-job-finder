@@ -18,6 +18,8 @@ const JobsCore = (() => {
       url: 'https://tenshoku.mynavi.jp/list/', site: 'https://tenshoku.mynavi.jp/' },
     { key: 'mynavi2027', name: 'マイナビ2027 (新卒)', mark: '27', tone: 'orange', mynavi: true,
       url: 'https://job.mynavi.jp/2027/', site: 'https://job.mynavi.jp/2027/' },
+    { key: 'daijob', name: 'Daijob 双语人才网', mark: 'D', tone: 'blue',
+      url: 'https://www.daijob.com/jobs/search_result?fresh_graduate=1', site: 'https://www.daijob.com/' },
   ];
   const LOCATIONS = [
     ['东京', /東京|东京|\btokyo\b/i], ['大阪', /大阪|\bosaka\b/i],
@@ -55,6 +57,7 @@ const JobsCore = (() => {
     ['电子', '电气', '电子电气', '電子', '電気', 'electronics', 'electrical'],
     ['机械', '機械', 'mechanical'],
     ['汽车', '自動車', 'automotive'],
+    ['外国人', '外国人ok', '外国籍', '留学生', '海外大', '国际学生', 'foreign', 'international'],
   ];
   const ROLE_NAMES = [
     [/backend|back-end|バックエンド|サーバーサイド/i, '后端工程师'],
@@ -211,17 +214,34 @@ const JobsCore = (() => {
     const resident = raw.resident !== undefined ? raw.resident : factsData.resident;
     const overtime = raw.overtime || factsData.overtime;
     const deadline = raw.deadline || factsData.deadline;
+    let foreignOk = Boolean(raw.foreignOk);
+    if (!foreignOk) {
+      if (source.key === 'daijob') {
+        foreignOk = true;
+      } else if (visa === '提供签证支持') {
+        foreignOk = true;
+      } else if (/woven|mujin|tanium/i.test(source.key) && !resident) {
+        foreignOk = true;
+      } else {
+        const textToCheck = `${title} ${description} ${(raw.tags || []).join(' ')} ${(raw.pills || []).join(' ')}`;
+        const foreignRegex = /外国人(?:留学生)?(?:を)?(?:積極)?採用|外国人(?:留学生)?(?:の方)?(?:も)?歓迎|外国人(?:留学生)?OK|留学生(?:を)?(?:積極)?採用|留学生(?:の方)?(?:も)?歓迎|留学生歓迎|留学生可|国籍不問|国籍を問わず|国籍問わず|外国籍(?:の方)?(?:も)?歓迎|外国籍社員|多国籍|ビザサポート|ビザ支援|就労ビザ|visa sponsorship|visa support|relocation support|海外大(?:生)?|バイリンガル|英語のみOK|中国語(?:を)?活か|語学(?:を)?活か|English ok|No Japanese required/i;
+        if (foreignRegex.test(textToCheck)) {
+          foreignOk = true;
+        }
+      }
+    }
     return { id, source: source.key, company: raw.company || source.name, title, titleZh,
       translation: translated ? 'curated' : role ? 'glossary' : '', summary: translated?.[1] ?? raw.summary ?? '',
       location, cities, category: raw.category || category, career, mode: raw.mode || mode, url, published, description, primaryLanguage,
-      salary, visa, language, resident, overtime, deadline };
+      salary, visa, language, resident, overtime, deadline, foreignOk };
   }
 
-  function search(jobs, { query = '', city = '', category = '', career = '', flexible = false, salary = false, sort = 'recommended' } = {}) {
+  function search(jobs, { query = '', city = '', category = '', career = '', flexible = false, salary = false, foreign = false, sort = 'recommended' } = {}) {
     const requested = lower(query).split(/[\s,，、/／]+/).filter(Boolean);
     const matches = jobs.filter((job) => {
       if ((city && !job.cities.includes(city)) || (category && job.category !== category) || (career && job.career !== career)) return false;
       if ((flexible && !['hybrid', 'remote', 'flexible'].includes(job.mode)) || (salary && !job.salary)) return false;
+      if (foreign && !job.foreignOk) return false;
       const haystack = lower([job.title, job.titleZh, job.company, job.location, ...job.cities, CATEGORIES[job.category], CAREERS[job.career], job.summary].join(' '));
       return requested.every((word) => {
         if (/^(?:名古屋|nagoya)$/.test(word)) return /nagoya|名古屋/i.test(job.location);
@@ -230,6 +250,7 @@ const JobsCore = (() => {
         if (/^(?:应届|新卒|校招|graduate)$/.test(word)) return job.career === 'graduate';
         if (/^(?:第二新卒|毕业不久)$/.test(word)) return job.career === 'early';
         if (/^(?:实习|intern|インターン)$/.test(word)) return job.career === 'intern';
+        if (/^(?:外国人|外国人ok|留学生|外国籍|海外大|海外大生)$/.test(word)) return Boolean(job.foreignOk);
         if (/^(?:软件开发|软件工程|it|开发)$/.test(word) && job.category === 'tech') return true;
         if (/^(?:远程|remote)$/.test(word)) return job.mode === 'remote' || job.mode === 'flexible';
         const synonyms = TERM_GROUPS.find((group) => group.includes(word)) ?? [word];

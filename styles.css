@@ -105,6 +105,7 @@ legend { padding: 0; margin-bottom: 7px; font-size: .86rem; font-weight: 750; }
 .company-mark.sand { background: #f2ead6; color: #705a2c; }
 .company-mark.cyan { background: #e0f2fe; color: #0284c7; }
 .company-mark.orange { background: #fef3c7; color: #b45309; }
+.company-mark.blue { background: #e0e7ff; color: #3730a3; }
 .card-bookmark { position: absolute; right: 13px; top: 13px; background: transparent; border: 0; padding: 8px; border-radius: 8px; color: #4c6258; }
 .card-bookmark:hover, .card-bookmark[aria-pressed='true'] { color: #9b4b2a; background: #faeee6; }
 [aria-pressed='true'] > .icon .bookmark-shape { fill: currentColor; }
@@ -115,6 +116,7 @@ legend { padding: 0; margin-bottom: 7px; font-size: .86rem; font-weight: 750; }
 .tags { display: flex; gap: 6px; flex-wrap: wrap; margin: 12px 0 9px; }
 .tag { border-radius: 5px; background: #eff3ed; color: #365247; padding: 4px 7px; font-size: .79rem; line-height: 1.25; }
 .tag.rose { background: #faede5; color: #823f23; }
+.tag.green-pill { background: #e3f5ec; color: #15623d; font-weight: 700; border: 1px solid #c2e8d3; }
 .tag .icon { margin-right: 3px; }
 .card-footer { margin-top: auto; border-top: 1px solid #edf0ec; padding: 10px 0; display: flex; align-items: center; gap: 7px; justify-content: space-between; }
 .salary { font-size: .85rem; color: #314e41; font-weight: 750; }

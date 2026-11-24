@@ -69,7 +69,7 @@
   function filters() {
     return { query, city: $('city').value, category: document.querySelector('[name="category"]:checked').value,
       career: document.querySelector('[name="career"]:checked').value, flexible: $('flexible').checked,
-      salary: $('salary-only').checked, sort: $('sort').value };
+      salary: $('salary-only').checked, foreign: $('foreign-only')?.checked || false, sort: $('sort').value };
   }
 
   function radioOptions(name, options) {
@@ -82,6 +82,7 @@
     $('city').value = '';
     $('flexible').checked = false;
     $('salary-only').checked = false;
+    if ($('foreign-only')) $('foreign-only').checked = false;
     document.querySelector('[name="category"][value=""]').checked = true;
     document.querySelector('[name="career"][value=""]').checked = true;
   }
@@ -112,7 +113,8 @@
 
   function renderChips(active) {
     const pairs = [['query', active.query], ['city', active.city], ['career', CAREERS[active.career]], ['category', CATEGORIES[active.category]],
-      ['flexible', active.flexible ? '远程或混合' : ''], ['salary-only', active.salary ? '公开薪资' : '']];
+      ['flexible', active.flexible ? '远程或混合' : ''], ['salary-only', active.salary ? '公开薪资' : ''],
+      ['foreign-only', active.foreign ? '外国人OK' : '']];
     const markup = pairs.filter(([, label]) => label).map(([key, label]) => `<button type="button" data-remove="${key}" aria-label="移除 ${escape(label)}">${escape(label)} ${icon('close')}</button>`).join('');
     $('active-filters').innerHTML = markup;
     $('active-filters').hidden = !markup;
@@ -126,7 +128,7 @@
       <button type="button" class="card-bookmark" data-bookmark="${escape(job.id)}" aria-pressed="${starred}" aria-label="${starred ? '取消收藏' : '收藏'} ${name}">${icon('bookmark')}</button>
       <h3><button type="button" class="job-title" data-detail="${escape(job.id)}">${name}</button></h3>
       <p class="job-original" title="${escape(job.title)}">${job.titleZh === job.title ? escape(CATEGORIES[job.category]) : escape(job.title)}</p>
-      <div class="tags"><span class="tag">${icon('pin')}${escape(localPlace(job))}</span>${job.career ? `<span class="tag${['intern', 'graduate', 'early'].includes(job.career) ? ' rose' : ''}">${CAREERS[job.career]}</span>` : ''}${job.mode ? `<span class="tag">${MODES[job.mode]}</span>` : ''}</div>
+      <div class="tags"><span class="tag">${icon('pin')}${escape(localPlace(job))}</span>${job.career ? `<span class="tag${['intern', 'graduate', 'early'].includes(job.career) ? ' rose' : ''}">${CAREERS[job.career]}</span>` : ''}${job.mode ? `<span class="tag">${MODES[job.mode]}</span>` : ''}${job.foreignOk ? `<span class="tag green-pill">外国人OK</span>` : ''}</div>
       <div class="card-footer"><span class="salary${job.salary ? '' : ' unknown'}">${escape(job.salary || '薪资未公开')}</span><button type="button" class="card-details" data-detail="${escape(job.id)}">查看详情</button></div>
     </article>`;
   }
@@ -157,7 +159,9 @@
   function renderDetail(job) {
     const value = (text) => escape(text || '未注明');
     const fields = [['工作地', `${localPlace(job)}${job.location ? `（${job.location}）` : ''}`], ['招聘类型', CAREERS[job.career]],
-      ['办公方式', MODES[job.mode]], ['公开薪资', job.salary], ['日语要求', job.language], ['签证支持', job.visa],
+      ['办公方式', MODES[job.mode]], ['公开薪资', job.salary], ['日语要求', job.language],
+      ['外国人应聘', job.foreignOk ? '外国人OK（留学生/外籍支援）' : '未明确标注'],
+      ['签证支持', job.visa || (job.foreignOk ? '提供签证或欢迎留学生应聘' : '')],
       ['固定加班', job.overtime], ['申请截止', formatDate(job.deadline)]];
     if (job.resident) fields.push(['居住要求', '原文写明仅限居住在日本的申请者']);
     const archived = !allJobs().some((current) => current.id === job.id);
