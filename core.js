@@ -230,18 +230,21 @@ const JobsCore = (() => {
         }
       }
     }
+    const reviews = raw.reviews || null;
+    const companyInfo = raw.companyInfo || null;
     return { id, source: source.key, company: raw.company || source.name, title, titleZh,
       translation: translated ? 'curated' : role ? 'glossary' : '', summary: translated?.[1] ?? raw.summary ?? '',
       location, cities, category: raw.category || category, career, mode: raw.mode || mode, url, published, description, primaryLanguage,
-      salary, visa, language, resident, overtime, deadline, foreignOk };
+      salary, visa, language, resident, overtime, deadline, foreignOk, reviews, companyInfo };
   }
 
-  function search(jobs, { query = '', city = '', category = '', career = '', flexible = false, salary = false, foreign = false, sort = 'recommended' } = {}) {
+  function search(jobs, { query = '', city = '', category = '', career = '', flexible = false, salary = false, foreign = false, reviewed = false, sort = 'recommended' } = {}) {
     const requested = lower(query).split(/[\s,，、/／]+/).filter(Boolean);
     const matches = jobs.filter((job) => {
       if ((city && !job.cities.includes(city)) || (category && job.category !== category) || (career && job.career !== career)) return false;
       if ((flexible && !['hybrid', 'remote', 'flexible'].includes(job.mode)) || (salary && !job.salary)) return false;
       if (foreign && !job.foreignOk) return false;
+      if (reviewed && !job.reviews?.score) return false;
       const haystack = lower([job.title, job.titleZh, job.company, job.location, ...job.cities, CATEGORIES[job.category], CAREERS[job.career], job.summary].join(' '));
       return requested.every((word) => {
         if (/^(?:名古屋|nagoya)$/.test(word)) return /nagoya|名古屋/i.test(job.location);
@@ -263,6 +266,10 @@ const JobsCore = (() => {
       const date = String(b.published || '').localeCompare(String(a.published || ''));
       if (sort === 'latest') return date;
       if (sort === 'salary') return Number(Boolean(b.salary)) - Number(Boolean(a.salary)) || date;
+      if (sort === 'rating') {
+        const diff = (Number(b.reviews?.score || 0) - Number(a.reviews?.score || 0));
+        return diff || (Number(b.reviews?.count || 0) - Number(a.reviews?.count || 0)) || date;
+      }
       return Number(Boolean(b.summary)) - Number(Boolean(a.summary)) ||
         Number(Boolean(b.translation)) - Number(Boolean(a.translation)) || date;
     });

@@ -44,6 +44,7 @@
             <label class="filter-option"><input type="checkbox" id="flexible"><span>远程或混合办公</span></label>
             <label class="filter-option"><input type="checkbox" id="salary-only"><span>已公开薪资</span></label>
             <label class="filter-option"><input type="checkbox" id="foreign-only"><span>外国人OK（留学生/签证支持）</span></label>
+            <label class="filter-option"><input type="checkbox" id="reviewed-only"><span>有员工口碑评价</span></label>
           </fieldset>
         </div>
       </aside>
@@ -53,7 +54,7 @@
           <div><h2 id="results-title">探索职位</h2><p><strong id="result-count" aria-live="polite"></strong><span class="divider-dot">·</span><span id="feed-status" role="status"></span></p></div>
           <div class="result-actions">
             <button type="button" class="refresh" id="refresh" title="刷新招聘来源" aria-label="刷新招聘来源"><span class="icon" data-icon="refresh"></span></button>
-            <div class="sort-control"><label class="sr-only" for="sort">结果排序</label><select id="sort"><option value="recommended">中文摘要优先</option><option value="latest">最新发布</option><option value="salary">公开薪资优先</option></select><span class="icon chevron" data-icon="chevron"></span></div>
+            <div class="sort-control"><label class="sr-only" for="sort">结果排序</label><select id="sort"><option value="recommended">中文摘要优先</option><option value="rating">公司口碑评分优先</option><option value="latest">最新发布</option><option value="salary">公开薪资优先</option></select><span class="icon chevron" data-icon="chevron"></span></div>
           </div>
         </header>
         <div class="active-filters" id="active-filters" aria-label="当前筛选" hidden></div>

@@ -131,3 +131,46 @@ test('normalizes Daijob bilingual source and tags foreign-friendly jobs correctl
   assert.equal(search([job], { query: '留学生' }).length, 1);
   assert.equal(search([job], { query: 'visa' }).length, 1);
 });
+
+test('preserves company reviews and profile, filters by reviewed, and sorts by rating', () => {
+  const source27 = SOURCES.find(s => s.key === 'mynavi2027');
+  const jobHigh = normalize({
+    id: '101',
+    company: 'High Rated Co',
+    title: 'Software Engineer',
+    location: '東京都渋谷区',
+    country: 'JP',
+    url: 'https://job.mynavi.jp/27/pc/search/corp101/outline.html',
+    reviews: { score: '4.1', count: 250, avgSalary: '800万円', items: [] },
+    companyInfo: { founded: '2010年', business: 'AI開発' },
+    description: 'AI開発'
+  }, source27);
+
+  const jobLow = normalize({
+    id: '102',
+    company: 'Lower Rated Co',
+    title: 'Engineer',
+    location: '東京都品川区',
+    country: 'JP',
+    url: 'https://job.mynavi.jp/27/pc/search/corp102/outline.html',
+    reviews: { score: '2.8', count: 100, items: [] },
+    description: 'SIer'
+  }, source27);
+
+  const jobUnreviewed = normalize({
+    id: '103',
+    company: 'New Co',
+    title: 'Designer',
+    location: '東京都港区',
+    country: 'JP',
+    url: 'https://job.mynavi.jp/27/pc/search/corp103/outline.html',
+    description: 'Web'
+  }, source27);
+
+  assert.equal(jobHigh.reviews.score, '4.1');
+  assert.equal(jobHigh.companyInfo.founded, '2010年');
+  assert.equal(search([jobHigh, jobLow, jobUnreviewed], { reviewed: true }).length, 2);
+
+  const sorted = search([jobLow, jobUnreviewed, jobHigh], { sort: 'rating' });
+  assert.deepEqual(sorted.map(j => j.id), ['mynavi2027:101', 'mynavi2027:102', 'mynavi2027:103']);
+});

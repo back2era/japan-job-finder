@@ -69,7 +69,8 @@
   function filters() {
     return { query, city: $('city').value, category: document.querySelector('[name="category"]:checked').value,
       career: document.querySelector('[name="career"]:checked').value, flexible: $('flexible').checked,
-      salary: $('salary-only').checked, foreign: $('foreign-only')?.checked || false, sort: $('sort').value };
+      salary: $('salary-only').checked, foreign: $('foreign-only')?.checked || false,
+      reviewed: $('reviewed-only')?.checked || false, sort: $('sort').value };
   }
 
   function radioOptions(name, options) {
@@ -83,6 +84,7 @@
     $('flexible').checked = false;
     $('salary-only').checked = false;
     if ($('foreign-only')) $('foreign-only').checked = false;
+    if ($('reviewed-only')) $('reviewed-only').checked = false;
     document.querySelector('[name="category"][value=""]').checked = true;
     document.querySelector('[name="career"][value=""]').checked = true;
   }
@@ -114,7 +116,7 @@
   function renderChips(active) {
     const pairs = [['query', active.query], ['city', active.city], ['career', CAREERS[active.career]], ['category', CATEGORIES[active.category]],
       ['flexible', active.flexible ? '远程或混合' : ''], ['salary-only', active.salary ? '公开薪资' : ''],
-      ['foreign-only', active.foreign ? '外国人OK' : '']];
+      ['foreign-only', active.foreign ? '外国人OK' : ''], ['reviewed-only', active.reviewed ? '有口碑评价' : '']];
     const markup = pairs.filter(([, label]) => label).map(([key, label]) => `<button type="button" data-remove="${key}" aria-label="移除 ${escape(label)}">${escape(label)} ${icon('close')}</button>`).join('');
     $('active-filters').innerHTML = markup;
     $('active-filters').hidden = !markup;
@@ -123,8 +125,9 @@
   function renderCard(job) {
     const starred = bookmarks.has(job.id);
     const name = escape(job.titleZh);
+    const ratingBadge = job.reviews?.score ? `<span class="company-rating" title="员工综合评分 ${escape(job.reviews.score)} / 5（${job.reviews.count || 0}条评价）">★ ${escape(job.reviews.score)}</span>` : '';
     return `<article class="job-card">
-      <div class="company-row">${companyMark(job)}<span>${escape(job.company)}</span></div>
+      <div class="company-row">${companyMark(job)}<span>${escape(job.company)}</span>${ratingBadge}</div>
       <button type="button" class="card-bookmark" data-bookmark="${escape(job.id)}" aria-pressed="${starred}" aria-label="${starred ? '取消收藏' : '收藏'} ${name}">${icon('bookmark')}</button>
       <h3><button type="button" class="job-title" data-detail="${escape(job.id)}">${name}</button></h3>
       <p class="job-original" title="${escape(job.title)}">${job.titleZh === job.title ? escape(CATEGORIES[job.category]) : escape(job.title)}</p>
@@ -156,6 +159,66 @@
     $('empty-action').textContent = noBookmarks ? '浏览职位' : '清除筛选';
   }
 
+  function renderCompanyProfile(info) {
+    if (!info) return '';
+    const stats = [
+      ['设立年份', info.founded],
+      ['资本金', info.capital],
+      ['销售额', info.revenue],
+      ['员工规模', info.employees],
+      ['平均年龄', info.avgAge],
+      ['平均月加班', info.avgOvertime],
+      ['有休取得', info.avgPaidLeave],
+      ['校招实绩', info.hires],
+    ].filter(([, v]) => v);
+    if (!stats.length && !info.business && !info.training) return '';
+    return `<h3>🏢 企业档案与工作实态</h3>
+      <div class="company-profile-card">
+        ${stats.length ? `<dl class="company-profile-grid">${stats.map(([k, v]) => `<div><dt>${k}</dt><dd>${escape(v)}</dd></div>`).join('')}</dl>` : ''}
+        ${info.business ? `<p class="detail-summary" style="margin:10px 0 6px;"><strong>主营业务：</strong>${escape(info.business)}</p>` : ''}
+        ${info.clients ? `<p class="detail-summary" style="margin:6px 0;"><strong>主要客户：</strong>${escape(info.clients)}</p>` : ''}
+        ${info.training ? `<p class="detail-summary" style="margin:6px 0 0;"><strong>研修育成：</strong>${escape(info.training)}</p>` : ''}
+        ${info.hpUrl ? `<p style="margin:8px 0 0;"><a class="review-link" href="${escape(info.hpUrl)}" target="_blank" rel="noopener noreferrer">企业官网 ↗</a></p>` : ''}
+      </div>`;
+  }
+
+  function renderReviewsPanel(reviews) {
+    if (!reviews || (!reviews.score && !reviews.items?.length)) return '';
+    const bars = reviews.subscores ? Object.entries(reviews.subscores) : [];
+    const items = reviews.items || [];
+    return `<h3>💬 公司口碑与员工真实评价</h3>
+      <div class="review-panel">
+        <div class="review-summary">
+          ${reviews.score ? `<span class="review-score-pill">★ <strong>${escape(reviews.score)}</strong> / 5.0</span>` : ''}
+          ${reviews.count ? `<span class="review-meta-pill">${escape(reviews.count)} 条评价</span>` : ''}
+          ${reviews.avgSalary ? `<span class="review-meta-pill">在职平均年薪 ${escape(reviews.avgSalary)}${reviews.salaryRange ? `（${escape(reviews.salaryRange)}）` : ''}</span>` : ''}
+          ${reviews.url ? `<a class="review-link" href="${escape(reviews.url)}" target="_blank" rel="noopener noreferrer">查看原网口碑 ↗</a>` : ''}
+        </div>
+        ${bars.length ? `<div class="review-bars">${bars.map(([label, val]) => `<div class="review-bar-item"><div class="review-bar-label"><span>${escape(label)}</span><strong>${escape(val)}</strong></div><div class="review-bar-track"><div class="review-bar-fill" style="width:${Math.min(100, (Number(val) / 5) * 100)}%"></div></div></div>`).join('')}</div>` : ''}
+        ${items.length ? `<div class="review-list">${items.map((item, idx) => `<article class="review-card">
+          <div class="review-card-head"><span class="review-cat">${escape(item.category)}</span><span class="review-card-meta">${item.rating ? `★ ${escape(item.rating)}` : ''}${item.date ? ` · ${escape(item.date)}` : ''}</span></div>
+          ${item.author ? `<div class="review-card-author">${escape(item.author)}</div>` : ''}
+          <p class="review-card-text" data-review-idx="${idx}">${escape(item.text)}</p>
+        </article>`).join('')}</div>` : ''}
+      </div>`;
+  }
+
+  function renderStructuredDescription(container, text) {
+    const blocks = text.split(/\n{2,}(?=【[^】]+】)/).filter(Boolean);
+    if (blocks.length > 1 && /^【/.test(blocks[0])) {
+      container.className = 'desc-sections';
+      container.innerHTML = blocks.map((block) => {
+        const lines = block.split('\n');
+        const header = lines[0].replace(/^【|】$/g, '').trim();
+        const body = lines.slice(1).join('\n').trim();
+        return `<section class="desc-card"><h4>${escape(header)}</h4><p class="desc-card-body">${escape(body)}</p></section>`;
+      }).join('');
+    } else {
+      container.className = 'description';
+      container.textContent = text;
+    }
+  }
+
   function renderDetail(job) {
     const value = (text) => escape(text || '未注明');
     const fields = [['工作地', `${localPlace(job)}${job.location ? `（${job.location}）` : ''}`], ['招聘类型', CAREERS[job.career]],
@@ -164,10 +227,13 @@
       ['签证支持', job.visa || (job.foreignOk ? '提供签证或欢迎留学生应聘' : '')],
       ['固定加班', job.overtime], ['申请截止', formatDate(job.deadline)]];
     if (job.resident) fields.push(['居住要求', '原文写明仅限居住在日本的申请者']);
+    if (job.reviews?.score) fields.push(['员工口碑评分', `★ ${job.reviews.score} / 5.0（${job.reviews.count || 0}条评价）`]);
+    if (job.reviews?.avgSalary) fields.push(['在职平均年薪', `${job.reviews.avgSalary}${job.reviews.salaryRange ? `（${job.reviews.salaryRange}）` : ''}`]);
     const archived = !allJobs().some((current) => current.id === job.id);
     const description = job.description || '';
     const starred = bookmarks.has(job.id);
-    $('job-detail').innerHTML = `<div class="company-row">${companyMark(job)}<span>${escape(job.company)}</span></div>
+    const ratingBadge = job.reviews?.score ? `<span class="company-rating">★ ${escape(job.reviews.score)}</span>` : '';
+    $('job-detail').innerHTML = `<div class="company-row">${companyMark(job)}<span>${escape(job.company)}</span>${ratingBadge}</div>
       <h2 id="detail-title">${escape(job.titleZh)}</h2><p class="detail-original">${escape(job.title)}</p>
       ${archived ? '<p class="translation-status">这是收藏时保存的记录，当前来源已未返回该职位。</p>' : ''}
       ${job.translation === 'glossary' ? '<p class="translation-status">中文标题为职种简译，完整职称见原文。</p>' : ''}
@@ -175,7 +241,9 @@
       <dl class="fact-grid">${fields.map(([key, text]) => `<div><dt>${key}</dt><dd>${value(text)}</dd></div>`).join('')}</dl>
       <div class="detail-actions"><a class="primary" href="${escape(job.url)}" target="_blank" rel="noopener noreferrer">查看原文与申请</a>
       <button type="button" class="secondary" id="detail-bookmark" aria-pressed="${starred}">${icon('bookmark')} ${starred ? '已收藏' : '收藏'}</button></div>
-      ${description ? `<h3>招聘详情</h3><div class="detail-actions"><button type="button" class="secondary" id="translate" aria-pressed="false">翻译当前正文</button></div><p class="translation-status" id="translation-status" role="status"></p><div id="job-description" class="description"></div>` : ''}`;
+      ${renderReviewsPanel(job.reviews)}
+      ${renderCompanyProfile(job.companyInfo)}
+      ${description ? `<h3>招聘详情</h3><div class="detail-actions"><button type="button" class="secondary" id="translate" aria-pressed="false">翻译正文与评价</button></div><p class="translation-status" id="translation-status" role="status"></p><div id="job-description"></div>` : ''}`;
     $('detail-bookmark').onclick = () => {
       updateBookmark(job);
       const button = $('detail-bookmark');
@@ -184,24 +252,27 @@
       button.innerHTML = `${icon('bookmark')} ${selected ? '已收藏' : '收藏'}`;
       render();
     };
-    if (description) wireTranslation(description, job.primaryLanguage);
+    if (description) wireTranslation(description, job.primaryLanguage, job.reviews?.items || []);
   }
 
-  function wireTranslation(description, primaryLanguage) {
+  function wireTranslation(description, primaryLanguage, reviewItems = []) {
     const text = description.slice(0, 5500);
     const clipped = description.length > text.length;
     const button = $('translate');
     const output = $('job-description');
     const status = $('translation-status');
     const defaultStatus = clipped ? '这里显示正文前段，完整内容见原文。' : '';
-    output.textContent = text;
+    renderStructuredDescription(output, text);
     status.textContent = defaultStatus;
     let chinese = '';
+    let translatedReviews = null;
+    const reviewEls = [...document.querySelectorAll('[data-review-idx]')];
     button.onclick = async () => {
       if (button.getAttribute('aria-pressed') === 'true') {
         button.setAttribute('aria-pressed', 'false');
-        button.textContent = '翻译当前正文';
-        output.textContent = text;
+        button.textContent = '翻译正文与评价';
+        renderStructuredDescription(output, text);
+        reviewEls.forEach((el) => { el.textContent = reviewItems[Number(el.dataset.reviewIdx)]?.text || ''; });
         status.textContent = defaultStatus;
         return;
       }
@@ -217,11 +288,22 @@
           const translator = await Translator.create({ sourceLanguage, targetLanguage: 'zh' });
           try {
             chinese = await translator.translate(text);
+            if (reviewItems.length && !translatedReviews) {
+              const jaTranslator = sourceLanguage === 'ja' ? translator : await Translator.create({ sourceLanguage: 'ja', targetLanguage: 'zh' });
+              try {
+                translatedReviews = await Promise.all(reviewItems.map((r) => jaTranslator.translate(r.text)));
+              } finally {
+                if (jaTranslator !== translator) jaTranslator.destroy();
+              }
+            }
           } finally {
             translator.destroy();
           }
         }
-        output.textContent = chinese;
+        renderStructuredDescription(output, chinese);
+        if (translatedReviews) {
+          reviewEls.forEach((el) => { el.textContent = translatedReviews[Number(el.dataset.reviewIdx)] || el.textContent; });
+        }
         status.textContent = clipped ? '浏览器机器翻译 · 正文前段' : '浏览器机器翻译';
         button.setAttribute('aria-pressed', 'true');
         button.textContent = '查看原文';
